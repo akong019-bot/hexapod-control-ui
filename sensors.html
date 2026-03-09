@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Hexapod Analytics Graphs and More Information</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #0a0a0a; --card: #161616; --accent: #007bff; --text: #eee; --green: #28a745; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        nav { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        nav a { color: var(--accent); text-decoration: none; font-weight: bold; margin-right: 20px; font-size: 0.9rem; text-transform: uppercase; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border: 1px solid #333; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: var(--accent); font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat-item { background: #222; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
+        .stat-label { color: #888; display: block; margin-bottom: 4px; }
+        .stat-val { font-weight: bold; color: var(--green); }
+        #map-placeholder { width: 100%; height: 250px; background: #111; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px dashed #444; color: #555; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">◀ Return to Operator GUI</a>
+    </nav>
+
+    <div class="grid">
+        <div class="card">
+            <h2>GPS</h2>
+            <div id="map-placeholder">Map Loading...</div>
+            <div class="stat-grid">
+                <div class="stat-item"><span class="stat-label">Latitude</span><span class="stat-val" id="lat">--</span></div>
+                <div class="stat-item"><span class="stat-label">Longitude</span><span class="stat-val" id="lng">--</span></div>
+                <div class="stat-item"><span class="stat-label">Fix Status</span><span class="stat-val" id="gps_fix">SEARCHING</span></div>
+                <div class="stat-item"><span class="stat-label">Terrain Mode</span><span class="stat-val" id="terrain">--</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Environmental Trends</h2>
+            <canvas id="liveChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>Sensor Stability Analysis</h2>
+            <div class="stat-grid">
+                <div class="stat-item"><span class="stat-label">Sonar Std Dev</span><span class="stat-val" id="sonar_std">--</span></div>
+                <div class="stat-item"><span class="stat-label">Gas Std Dev</span><span class="stat-val" id="gas_std">--</span></div>
+                <div class="stat-item"><span class="stat-label">Temp Delta</span><span class="stat-val" id="temp_delta">--</span></div>
+                <div class="stat-item"><span class="stat-label">Sound Mean</span><span class="stat-val" id="sound_mean">--</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Mission Lifetime Records</h2>
+            <div class="stat-grid">
+                <div class="stat-item"><span class="stat-label">Max Temp Recorded</span><span class="stat-val" id="life_temp_max">--</span></div>
+                <div class="stat-item"><span class="stat-label">Max Gas Recorded</span><span class="stat-val" id="life_gas_max">--</span></div>
+                <div class="stat-item"><span class="stat-label">Min Distance Recorded</span><span class="stat-val" id="life_sonar_min">--</span></div>
+                <div class="stat-item"><span class="stat-label">Max Sound Recorded</span><span class="stat-val" id="life_sound_max">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sensorIP = localStorage.getItem('sensorIP');
+        const ctx = document.getElementById('liveChart').getContext('2d');
+        
+        const liveChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'Temp (°C)', borderColor: '#ff4d4d', data: [], tension: 0.3 },
+                { label: 'Sonar (cm)', borderColor: '#007bff', data: [], tension: 0.3 }
+            ]},
+            options: { responsive: true, scales: { x: { display: false }, y: { grid: { color: '#333' } } } }
+        });
+
+        if (sensorIP) {
+            const socket = new WebSocket(`ws://${sensorIP}:81`);
+            socket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    document.getElementById('lat').innerText = data.lat.toFixed(6);
+                    document.getElementById('lng').innerText = data.lng.toFixed(6);
+                    document.getElementById('gps_fix').innerText = data.gps_fix ? "FIXED" : "NO FIX";
+                    document.getElementById('terrain').innerText = data.terrain;
+
+                    document.getElementById('sonar_std').innerText = data.sonar_std.toFixed(2);
+                    document.getElementById('gas_std').innerText = data.gas_std.toFixed(2);
+                    document.getElementById('temp_delta').innerText = data.temp_delta.toFixed(2);
+                    document.getElementById('sound_mean').innerText = data.sound_mean.toFixed(1);
+
+                    document.getElementById('life_temp_max').innerText = data.life_temp_max.toFixed(1) + "°C";
+                    document.getElementById('life_gas_max').innerText = data.life_gas_max.toFixed(0) + "ppm";
+                    document.getElementById('life_sonar_min').innerText = data.life_sonar_min.toFixed(1) + "cm";
+                    document.getElementById('life_sound_max').innerText = data.life_sound_max.toFixed(1) + "dB";
+
+                    const now = new Date().toLocaleTimeString();
+                    liveChart.data.labels.push(now);
+                    liveChart.data.datasets[0].data.push(data.tempC);
+                    liveChart.data.datasets[1].data.push(data.sonar_cm);
+
+                    if (liveChart.data.labels.length > 30) {
+                        liveChart.data.labels.shift();
+                        liveChart.data.datasets[0].data.shift();
+                        liveChart.data.datasets[1].data.shift();
+                    }
+                    liveChart.update();
+                } catch(e) { console.error("JSON Error", e); }
+            };
+        } else {
+            alert("Please set Sensor IP on the Operator Dashboard first!");
+        }
+    </script>
+</body>
+</html>
