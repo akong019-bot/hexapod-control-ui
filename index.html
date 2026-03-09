@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hexapod Remote</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
+        input, select { background: #222; color: #fff; border: 1px solid #444; padding: 10px; width: 80%; border-radius: 5px; margin: 10px 0; }
+        button.move { width: 70px; height: 70px; margin: 5px; font-size: 20px; border-radius: 10px; border: none; background: #333; color: white; cursor: pointer; }
+        button.active { background: #28a745; }
+        .label { font-size: 12px; color: #888; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <h1>HEXAPOD</h1>
+    
+    <div class="card">
+        <div class="label">Step 1: Connect</div>
+        <input type="text" id="robotIp" placeholder="Robot IP (e.g. 192.168.1.50)">
+    </div>
+
+    <div class="card">
+        <div class="label">Step 2: Movement</div>
+        <button class="move" id="F" onclick="sendCmd('F')">▲</button><br>
+        <button class="move" id="L" onclick="sendCmd('L')">◀</button>
+        <button class="move" id="S" onclick="sendCmd('S')">■</button>
+        <button class="move" id="R" onclick="sendCmd('R')">▶</button><br>
+        <button class="move" id="B" onclick="sendCmd('B')">▼</button>
+    </div>
+
+    <div class="card">
+        <div class="label">Step 3: Configuration</div>
+        <select onchange="sendCmd('G', this.value)">
+            <option value="1">Gait: Fast (2-Step)</option>
+            <option value="2">Gait: Medium (4-Step)</option>
+            <option value="3">Gait: Stable (6-Step)</option>
+        </select>
+        <br>
+        <div class="label">Action Speed</div>
+        <input type="range" min="1" max="100" value="80" onchange="sendCmd('P', this.value)">
+    </div>
+
+    <script>
+        function sendCmd(c, val = null) {
+            const ip = document.getElementById('robotIp').value;
+            if(!ip) return alert("Enter Robot IP first!");
+            let url = `http://${ip}/?cmd=${c}`;
+            if(val) url += `&val=${val}`;
+            fetch(url, { mode: 'no-cors' });
+        }
+    </script>
+</body>
+</html>
