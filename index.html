@@ -1,35 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hexapod Alpha: Unified Command</title>
+    <title>Hexapod Operator GUI</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --bg: #0a0a0a; --card: #161616; --accent: #007bff; --text: #eee; --green: #28a745; --red: #dc3545; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; display: grid; grid-template-columns: 320px 1fr; gap: 15px; height: 100vh; box-sizing: border-box; }
         .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-        h2 { margin-top: 0; color: var(--accent); font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        h2 { margin-top: 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
         
-        .input-group { margin-bottom: 10px; text-align: left; }
-        label { display: block; font-size: 0.7rem; color: #888; margin-bottom: 5px; text-transform: uppercase; }
-        input[type=text] { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
-        .btn-connect { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .input-group { margin-bottom: 8px; text-align: left; }
+        label { display: block; font-size: 0.65rem; color: #888; margin-bottom: 3px; text-transform: uppercase; }
+        input[type=text] { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 0.9rem; }
+        .btn-connect { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
         .cam-container { flex-grow: 1; position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #444; background: #000; }
         #camIframe { width: 100%; height: 100%; border: none; }
 
-        .dpad-container { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .dpad-container { display: flex; flex-direction: column; align-items: center; margin: 15px 0; }
         .dpad-row { display: flex; justify-content: center; }
-        .move-btn { width: 65px; height: 65px; margin: 5px; background: #333; border: none; border-radius: 12px; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .move-btn { width: 60px; height: 60px; margin: 4px; background: #333; border: none; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center; }
         .move-btn:active { background: var(--accent); transform: scale(0.9); }
         .move-btn.stop { background: var(--red); }
-        .spacer { width: 75px; height: 75px; margin: 5px; }
 
-        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
-        .sensor-box { background: #1f1f1f; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid var(--accent); }
-        .sensor-value { font-size: 1.1rem; font-weight: bold; color: var(--green); margin-top: 5px; }
+        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+        .sensor-box { background: #1f1f1f; padding: 8px; border-radius: 8px; text-align: center; border-bottom: 3px solid var(--accent); }
+        .sensor-value { font-size: 1rem; font-weight: bold; color: var(--green); margin-top: 4px; }
+        .label-text { font-size: 0.65rem; color: #888; text-transform: uppercase; }
         
-        @media (max-width: 900px) { body { grid-template-columns: 1fr; height: auto; } .cam-container { height: 400px; } }
+        @media (max-width: 900px) { body { grid-template-columns: 1fr; height: auto; } .cam-container { height: 350px; } }
     </style>
 </head>
 <body>
@@ -38,14 +38,18 @@
         <div class="card">
             <h2>Connection Hub</h2>
             <div class="input-group">
-                <label>Robot & Sensors IP (Mega)</label>
+                <label>Robot Controller IP</label>
                 <input type="text" id="robotIpInput" placeholder="e.g. 192.168.137.221">
             </div>
             <div class="input-group">
-                <label>Camera IP (ESP32-CAM)</label>
+                <label>Sensor Station IP</label>
+                <input type="text" id="sensorIpInput" placeholder="e.g. 192.168.137.221">
+            </div>
+            <div class="input-group">
+                <label>Camera IP</label>
                 <input type="text" id="camIpInput" placeholder="e.g. 192.168.137.53">
             </div>
-            <button class="btn-connect" onclick="saveAndConnect()">SAVE & SYNC DEVICES</button>
+            <button class="btn-connect" onclick="saveAndConnect()">SAVE</button>
         </div>
 
         <div class="card" style="margin-top:15px; flex-grow: 1;">
@@ -64,35 +68,35 @@
                 </div>
             </div>
             
-            <label>Gait Gear</label>
-            <select id="gait" onchange="sendCmd('G', this.value)" style="width:100%; padding:10px; background:#222; color:white; border:1px solid #444; border-radius:5px; margin-bottom:15px;">
-                <option value="1">Fast (2-Step Tripod)</option>
+            <label>Gait selection</label>
+            <select id="gait" onchange="sendCmd('G', this.value)" style="width:100%; padding:10px; background:#222; color:white; border:1px solid #444; border-radius:5px; margin-bottom:12px;">
+                <option value="1">Fast (2-Step)</option>
                 <option value="2">Medium (4-Step)</option>
-                <option value="3">Stable (6-Step Ripple)</option>
+                <option value="3">Long (6-Step)</option>
             </select>
             
-            <label>Throttle (Action Speed)</label>
+            <label>Speed</label>
             <input type="range" min="1" max="100" value="80" onchange="sendCmd('P', this.value)" style="width:100%;">
         </div>
     </div>
 
     <div class="right-col" style="display: flex; flex-direction: column; gap: 15px;">
         <div class="card" style="flex-grow: 1;">
-            <h2>Live Camera Interface</h2>
+            <h2>Live Camera</h2>
             <div class="cam-container">
-                <iframe id="camIframe" src="" title="ESP32-CAM Interface"></iframe>
+                <iframe id="camIframe" src="" title="Live Camera"></iframe>
             </div>
         </div>
 
-        <div class="card" style="height: 200px;">
-            <h2>Numerical Readings</h2>
+        <div class="card" style="min-height: 180px;">
+            <h2>Sensor Telemetry (Broadcast JSON)</h2>
             <div class="sensor-grid">
-                <div class="sensor-box"><div class="label">Temperature</div><div class="sensor-value" id="temp">--</div></div>
-                <div class="sensor-box"><div class="label">Humidity</div><div class="sensor-value" id="hum">--</div></div>
-                <div class="sensor-box"><div class="label">Distance</div><div class="sensor-value" id="sonar">--</div></div>
-                <div class="sensor-box"><div class="label">Gas/MQ2</div><div class="sensor-value" id="gas">--</div></div>
-                <div class="sensor-box"><div class="label">Terrain</div><div class="sensor-value" id="terrain">--</div></div>
-                <div class="sensor-box"><div class="label">Sound (dB)</div><div class="sensor-value" id="sound">--</div></div>
+                <div class="sensor-box"><div class="label-text">Temp</div><div class="sensor-value" id="temp">--</div></div>
+                <div class="sensor-box"><div class="label-text">Humidity</div><div class="sensor-value" id="hum">--</div></div>
+                <div class="sensor-box"><div class="label-text">Distance</div><div class="sensor-value" id="sonar">--</div></div>
+                <div class="sensor-box"><div class="label-text">Gas/MQ2</div><div class="sensor-value" id="gas">--</div></div>
+                <div class="sensor-box"><div class="label-text">Terrain</div><div class="sensor-value" id="terrain">--</div></div>
+                <div class="sensor-box"><div class="label-text">Sound (dB)</div><div class="sensor-value" id="sound">--</div></div>
             </div>
         </div>
     </div>
@@ -100,15 +104,22 @@
     <script>
         let socket;
         let robotIP = "";
+        let sensorIP = "";
 
+        // saved IPs from browser to be loaded in
         window.onload = function() {
             const savedRobot = localStorage.getItem('robotIP');
+            const savedSensor = localStorage.getItem('sensorIP');
             const savedCam = localStorage.getItem('camIP');
             
             if (savedRobot) {
                 document.getElementById('robotIpInput').value = savedRobot;
                 robotIP = savedRobot;
-                connectWebSocket(savedRobot);
+            }
+            if (savedSensor) {
+                document.getElementById('sensorIpInput').value = savedSensor;
+                sensorIP = savedSensor;
+                connectWebSocket(savedSensor);
             }
             if (savedCam) {
                 document.getElementById('camIpInput').value = savedCam;
@@ -118,13 +129,16 @@
 
         function saveAndConnect() {
             robotIP = document.getElementById('robotIpInput').value;
+            sensorIP = document.getElementById('sensorIpInput').value;
             const camIP = document.getElementById('camIpInput').value;
 
             localStorage.setItem('robotIP', robotIP);
+            localStorage.setItem('sensorIP', sensorIP);
             localStorage.setItem('camIP', camIP);
 
             document.getElementById('camIframe').src = `http://${camIP}`;
-            connectWebSocket(robotIP);
+            connectWebSocket(sensorIP);
+            alert("All IPs synced and saved!");
         }
 
         function connectWebSocket(ip) {
@@ -132,18 +146,20 @@
             socket = new WebSocket(`ws://${ip}:81`);
             
             socket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                document.getElementById('temp').innerText = data.tempC.toFixed(1) + "°C";
-                document.getElementById('hum').innerText = data.humidity.toFixed(0) + "%";
-                document.getElementById('sonar').innerText = data.sonar_cm.toFixed(1) + "cm";
-                document.getElementById('gas').innerText = data.mq2_ppm.toFixed(0) + "ppm";
-                document.getElementById('terrain').innerText = data.terrain;
-                document.getElementById('sound').innerText = data.sound_db.toFixed(1);
+                try {
+                    const data = JSON.parse(event.data);
+                    document.getElementById('temp').innerText = data.tempC.toFixed(1) + "°C";
+                    document.getElementById('hum').innerText = data.humidity.toFixed(0) + "%";
+                    document.getElementById('sonar').innerText = data.sonar_cm.toFixed(1) + "cm";
+                    document.getElementById('gas').innerText = data.mq2_ppm.toFixed(0) + "ppm";
+                    document.getElementById('terrain').innerText = data.terrain;
+                    document.getElementById('sound').innerText = data.sound_db.toFixed(1);
+                } catch(e) { console.log("JSON Parse Error"); }
             };
         }
 
         function sendCmd(c, val = null) {
-            if(!robotIP) return;
+            if(!robotIP) return alert("Enter Robot IP first!");
             let url = `http://${robotIP}/?cmd=${c}`;
             if(val) url += `&val=${val}`;
             fetch(url, { mode: 'no-cors' }).catch(() => {});
