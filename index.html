@@ -16,12 +16,12 @@
     <h1>HEXAPOD</h1>
     
     <div class="card">
-        <div class="label">Step 1: Connect</div>
+        <div class="label">Connect (Insert IP)</div>
         <input type="text" id="robotIp" placeholder="Robot IP (e.g. 192.168.1.50)">
     </div>
 
     <div class="card">
-        <div class="label">Step 2: Movement</div>
+        <div class="label">Movement Control</div>
         <button class="move" id="F" onclick="sendCmd('F')">▲</button><br>
         <button class="move" id="L" onclick="sendCmd('L')">◀</button>
         <button class="move" id="S" onclick="sendCmd('S')">■</button>
@@ -30,7 +30,7 @@
     </div>
 
     <div class="card">
-        <div class="label">Step 3: Configuration</div>
+        <div class="label">Settings</div>
         <select onchange="sendCmd('G', this.value)">
             <option value="1">Gait: Fast (2-Step)</option>
             <option value="2">Gait: Medium (4-Step)</option>
@@ -52,3 +52,4 @@
     </script>
 </body>
 </html>
+
