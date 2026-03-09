@@ -1,32 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hexapod Unified GUI</title>
+    <title>Hexapod Alpha: Unified Command</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root { --bg: #0a0a0a; --card: #161616; --accent: #007bff; --text: #eee; --green: #28a745; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 15px; }
-        .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2 { margin-top: 0; color: var(--accent); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        :root { --bg: #0a0a0a; --card: #161616; --accent: #007bff; --text: #eee; --green: #28a745; --red: #dc3545; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; display: grid; grid-template-columns: 320px 1fr; gap: 15px; height: 100vh; box-sizing: border-box; }
+        .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        h2 { margin-top: 0; color: var(--accent); font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
         
-        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group { margin-bottom: 10px; text-align: left; }
         label { display: block; font-size: 0.7rem; color: #888; margin-bottom: 5px; text-transform: uppercase; }
         input[type=text] { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
-        .btn-connect { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-connect { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
 
-        #stream { width: 100%; height: auto; border-radius: 8px; border: 1px solid #444; background: #000; min-height: 240px; }
-        
-        .controls { display: grid; place-items: center; margin-bottom: 15px; }
-        .move-btn { width: 70px; height: 70px; margin: 5px; background: #333; border: none; border-radius: 12px; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .cam-container { flex-grow: 1; position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #444; background: #000; }
+        #camIframe { width: 100%; height: 100%; border: none; }
+
+        .dpad-container { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .dpad-row { display: flex; justify-content: center; }
+        .move-btn { width: 65px; height: 65px; margin: 5px; background: #333; border: none; border-radius: 12px; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .move-btn:active { background: var(--accent); transform: scale(0.9); }
-        .move-btn.stop { background: #dc3545; }
+        .move-btn.stop { background: var(--red); }
+        .spacer { width: 75px; height: 75px; margin: 5px; }
 
-        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        .sensor-box { background: #1f1f1f; padding: 12px; border-radius: 8px; text-align: center; border-bottom: 3px solid var(--accent); }
-        .sensor-value { font-size: 1.3rem; font-weight: bold; color: var(--green); margin-top: 5px; }
+        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+        .sensor-box { background: #1f1f1f; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid var(--accent); }
+        .sensor-value { font-size: 1.1rem; font-weight: bold; color: var(--green); margin-top: 5px; }
         
-        @media (max-width: 900px) { body { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { body { grid-template-columns: 1fr; height: auto; } .cam-container { height: 400px; } }
     </style>
 </head>
 <body>
@@ -45,35 +48,43 @@
             <button class="btn-connect" onclick="saveAndConnect()">SAVE & SYNC DEVICES</button>
         </div>
 
-        <div class="card" style="margin-top:15px;">
-            <h2>Movement Controls</h2>
-            <div class="controls">
-                <button class="move-btn" onclick="sendCmd('F')">▲</button><br>
-                <button class="move-btn" onclick="sendCmd('L')">◀</button>
-                <button class="move-btn stop" onclick="sendCmd('S')">■</button>
-                <button class="move-btn" onclick="sendCmd('R')">▶</button><br>
-                <button class="move-btn" onclick="sendCmd('B')">▼</button>
+        <div class="card" style="margin-top:15px; flex-grow: 1;">
+            <h2>Manual Piloting</h2>
+            <div class="dpad-container">
+                <div class="dpad-row">
+                    <button class="move-btn" onclick="sendCmd('F')">▲</button>
+                </div>
+                <div class="dpad-row">
+                    <button class="move-btn" onclick="sendCmd('L')">◀</button>
+                    <button class="move-btn stop" onclick="sendCmd('S')">■</button>
+                    <button class="move-btn" onclick="sendCmd('R')">▶</button>
+                </div>
+                <div class="dpad-row">
+                    <button class="move-btn" onclick="sendCmd('B')">▼</button>
+                </div>
             </div>
+            
             <label>Gait Gear</label>
-            <select id="gait" onchange="sendCmd('G', this.value)" style="width:100%; padding:10px; background:#222; color:white; border:1px solid #444; border-radius:5px;">
+            <select id="gait" onchange="sendCmd('G', this.value)" style="width:100%; padding:10px; background:#222; color:white; border:1px solid #444; border-radius:5px; margin-bottom:15px;">
                 <option value="1">Fast (2-Step Tripod)</option>
                 <option value="2">Medium (4-Step)</option>
                 <option value="3">Stable (6-Step Ripple)</option>
             </select>
-            <div style="margin-top:15px;">
-                <label>Throttle (Action Speed)</label>
-                <input type="range" min="1" max="100" value="80" onchange="sendCmd('P', this.value)" style="width:100%;">
-            </div>
+            
+            <label>Throttle (Action Speed)</label>
+            <input type="range" min="1" max="100" value="80" onchange="sendCmd('P', this.value)" style="width:100%;">
         </div>
     </div>
 
-    <div class="right-col">
-        <div class="card">
-            <h2>Live Camera Feed</h2>
-            <img id="stream" src="" alt="Waiting for Connection..." onerror="this.src='https://via.placeholder.com/640x480?text=Camera+Offline'">
+    <div class="right-col" style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="card" style="flex-grow: 1;">
+            <h2>Live Camera Interface</h2>
+            <div class="cam-container">
+                <iframe id="camIframe" src="" title="ESP32-CAM Interface"></iframe>
+            </div>
         </div>
 
-        <div class="card" style="margin-top:15px;">
+        <div class="card" style="height: 200px;">
             <h2>Numerical Readings</h2>
             <div class="sensor-grid">
                 <div class="sensor-box"><div class="label">Temperature</div><div class="sensor-value" id="temp">--</div></div>
@@ -89,7 +100,7 @@
     <script>
         let socket;
         let robotIP = "";
-//memory section, load previously loaded ips
+
         window.onload = function() {
             const savedRobot = localStorage.getItem('robotIP');
             const savedCam = localStorage.getItem('camIP');
@@ -101,7 +112,7 @@
             }
             if (savedCam) {
                 document.getElementById('camIpInput').value = savedCam;
-                document.getElementById('stream').src = `http://${savedCam}/stream`;
+                document.getElementById('camIframe').src = `http://${savedCam}`;
             }
         };
 
@@ -112,9 +123,8 @@
             localStorage.setItem('robotIP', robotIP);
             localStorage.setItem('camIP', camIP);
 
-            document.getElementById('stream').src = `http://${camIP}/stream`;
+            document.getElementById('camIframe').src = `http://${camIP}`;
             connectWebSocket(robotIP);
-            alert("Connection Settings Updated!");
         }
 
         function connectWebSocket(ip) {
@@ -130,15 +140,13 @@
                 document.getElementById('terrain').innerText = data.terrain;
                 document.getElementById('sound').innerText = data.sound_db.toFixed(1);
             };
-
-            socket.onclose = function() { console.log("WebSocket Disconnected. Robot might be off."); };
         }
 
         function sendCmd(c, val = null) {
-            if(!robotIP) return alert("Please set Robot IP first!");
+            if(!robotIP) return;
             let url = `http://${robotIP}/?cmd=${c}`;
             if(val) url += `&val=${val}`;
-            fetch(url, { mode: 'no-cors' }).catch(err => console.log("Robot Request Sent"));
+            fetch(url, { mode: 'no-cors' }).catch(() => {});
         }
     </script>
 </body>
